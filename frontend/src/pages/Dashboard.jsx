@@ -1,40 +1,41 @@
-import { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { coursesApi } from '../services/api';
-import Spinner from '../components/common/Spinner';
-
-const Dashboard = () => {
+const DashboardPage = () => {
   const { user, logout } = useAuth();
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [newCourse, setNewCourse] = useState({ title: '', description: '' });
-
-  const fetchCourses = async () => {
-    try {
-      const { data } = await coursesApi.getAll();
-      setCourses(data);
-    } catch (err) {
-      console.error('Ошибка загрузки курсов', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [lessons, setLessons] = useState([]);
 
   useEffect(() => {
-    fetchCourses();
+    const fetchLessons = async () => {
+      try {
+        const data = await lessonsService.getAll();
+        setLessons(data);
+      } catch (err) {
+        console.error('Ошибка загрузки уроков');
+      }
+    };
+    fetchLessons();
   }, []);
 
-  const handleCreateCourse = async (e) => {
-    e.preventDefault();
-    try {
-      await coursesApi.create(newCourse);
-      setShowModal(false);
-      setNewCourse({ title: '', description: '' });
-      fetchCourses();
-    } catch (err) {
-      alert('Ошибка при создании курса');
-    }
-  };
-
+  
   return (
+    <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <h1>Привет, {user?.name || 'Пользователь'}!</h1>
+        <button onClick={logout}>Выйти</button>
+      </header>
+      
+      <main>
+        <h2>Доступные уроки</h2>
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          {lessons.length === 0 ? (
+            <p>Уроков пока нет.</p>
+          ) : (
+            lessons.map((lesson, idx) => (
+              <div key={idx} style={{ padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
+                <h3>{lesson.title || 'Урок без названия'}</h3>
+              </div>
+            ))
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};

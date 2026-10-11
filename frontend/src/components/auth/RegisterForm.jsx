@@ -1,33 +1,45 @@
-import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import styles from './AuthForm.module.css';
-
 const RegisterForm = () => {
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    role: 'teacher'
-  });
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { register, loading } = useAuth();
+  
+  const { register } = useAuth();
   const navigate = useNavigate();
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
+    
     try {
-      await register(formData);
+      await register({ name, email, password });
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Ошибка регистрации');
+      setError('Ошибка при регистрации');
     }
   };
 
   return (
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '300px', margin: '0 auto' }}>
+      <h2>Регистрация</h2>
+      {error && <div style={{ color: 'red' }}>{error}</div>}
+      
+      <div>
+        <label>Имя:</label>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} required style={{ width: '100%' }} />
+      </div>
+      
+      <div>
+        <label>Email:</label>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%' }} />
+      </div>
+      
+      <div>
+        <label>Пароль:</label>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%' }} />
+      </div>
+      
+      <button type="submit">Зарегистрироваться</button>
+    </form>
+  );
+};
