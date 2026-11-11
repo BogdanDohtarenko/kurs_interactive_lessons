@@ -2,6 +2,56 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { lessonsService, testsService, tasksService } from '../services/api';
 
+/* ───────────────────────── Утилита: определяем картинку ───────────────────────── */
+const isImageUrl = (url) => {
+  if (!url) return false;
+  return /\.(jpeg|jpg|gif|png|webp|svg|bmp)(\?.*)?$/i.test(url);
+};
+
+/* ───────────────────────── Утилита: превью ссылки ───────────────────────── */
+function UrlPreview({ url }) {
+  if (!url) return null;
+
+  if (isImageUrl(url)) {
+    return (
+      <div className="mt-2">
+        <p className="text-xs text-gray-500 mb-1">Превью эталона:</p>
+        <img
+          src={url}
+          alt="Эталон"
+          className="max-h-48 rounded-lg border border-gray-200"
+          onError={(e) => {
+            e.target.style.display = 'none';
+            e.target.nextSibling && (e.target.nextSibling.style.display = 'block');
+          }}
+        />
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-indigo-600 underline mt-1 inline-block"
+        >
+          Открыть в новой вкладке
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-xs text-indigo-600 underline mt-2 inline-block"
+    >
+      🔗 Открыть эталон в новой вкладке
+    </a>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*                              ГЛАВНЫЙ КОМПОНЕНТ                              */
+/* ═══════════════════════════════════════════════════════════════════════════ */
 export default function LessonEditor() {
   const { id } = useParams();
   const [lesson, setLesson] = useState(null);
@@ -49,7 +99,9 @@ export default function LessonEditor() {
   );
 }
 
-/* ============== РЕДАКТОР ТЕСТА ============== */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*                                РЕДАКТОР ТЕСТА                              */
+/* ═══════════════════════════════════════════════════════════════════════════ */
 function TestEditor({ lessonId }) {
   const [test, setTest] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -156,7 +208,10 @@ function TestEditor({ lessonId }) {
             onClick={() =>
               setTest({
                 ...test,
-                questions: [...(test.questions || []), { question: '', options: ['', ''], correctAnswer: 0 }],
+                questions: [
+                  ...(test.questions || []),
+                  { question: '', options: ['', '', '', ''], correctAnswer: 0 },
+                ],
               })
             }
             className="text-sm text-indigo-600 hover:text-indigo-800"
@@ -177,9 +232,10 @@ function TestEditor({ lessonId }) {
                   }}
                   className="text-xs text-red-600 hover:text-red-800"
                 >
-                  Удалить
+                  Удалить вопрос
                 </button>
               </div>
+
               <input
                 type="text"
                 placeholder="Текст вопроса"
@@ -191,6 +247,7 @@ function TestEditor({ lessonId }) {
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-3 text-sm"
               />
+
               <div className="space-y-2">
                 {q.options.map((opt, oi) => (
                   <div key={oi} className="flex items-center gap-2">
@@ -203,6 +260,7 @@ function TestEditor({ lessonId }) {
                         next[qi] = { ...q, correctAnswer: oi };
                         setTest({ ...test, questions: next });
                       }}
+                      title="Отметить как правильный"
                     />
                     <input
                       type="text"
@@ -217,8 +275,43 @@ function TestEditor({ lessonId }) {
                       }}
                       className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
                     />
+                    {q.options.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = [...test.questions];
+                          const opts = q.options.filter((_, i) => i !== oi);
+                          let correct = q.correctAnswer;
+                          if (correct === oi) correct = 0;
+                          else if (correct > oi) correct -= 1;
+                          next[qi] = { ...q, options: opts, correctAnswer: correct };
+                          setTest({ ...test, questions: next });
+                        }}
+                        className="text-xs text-red-500 hover:text-red-700 px-2"
+                        title="Удалить вариант"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                 ))}
+              </div>
+
+              <div className="mt-2 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = [...test.questions];
+                    next[qi] = { ...q, options: [...q.options, ''] };
+                    setTest({ ...test, questions: next });
+                  }}
+                  className="text-xs text-indigo-600 hover:text-indigo-800"
+                >
+                  + Добавить вариант
+                </button>
+                <span className="text-[11px] text-gray-400">
+                  минимум 2 варианта
+                </span>
               </div>
             </div>
           ))}
@@ -233,7 +326,13 @@ function TestEditor({ lessonId }) {
           Удалить тест
         </button>
         <button
-          onClick={() => handleUpdate({ title: test.title, passingScore: test.passingScore, questions: test.questions })}
+          onClick={() =>
+            handleUpdate({
+              title: test.title,
+              passingScore: test.passingScore,
+              questions: test.questions,
+            })
+          }
           disabled={saving}
           className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
         >
@@ -244,13 +343,20 @@ function TestEditor({ lessonId }) {
   );
 }
 
-/* ============== РЕДАКТОР ПРАКТИКИ ============== */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*                              РЕДАКТОР ПРАКТИКИ                             */
+/* ═══════════════════════════════════════════════════════════════════════════ */
 function TaskEditor({ lessonId }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [draft, setDraft] = useState({ description: '', maxScore: 10 });
+  const [draft, setDraft] = useState({
+    description: '',
+    maxScore: 10,
+    expectedResultUrl: '',
+    allowSelfCheck: true,
+  });
 
   const load = () => {
     setLoading(true);
@@ -270,7 +376,7 @@ function TaskEditor({ lessonId }) {
     setError('');
     try {
       await tasksService.create({ ...draft, lessonId });
-      setDraft({ description: '', maxScore: 10 });
+      setDraft({ description: '', maxScore: 10, expectedResultUrl: '', allowSelfCheck: true });
       load();
     } catch (err) {
       setError(err.response?.data?.message || 'Ошибка создания');
@@ -298,71 +404,165 @@ function TaskEditor({ lessonId }) {
 
   return (
     <div className="space-y-6">
+      {/* ФОРМА СОЗДАНИЯ */}
       <form onSubmit={handleCreate} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
         <h3 className="font-semibold text-gray-900">Новое задание</h3>
         {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
-        <textarea
-          rows="3"
-          placeholder="Описание задания..."
-          value={draft.description}
-          onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-        />
-        <div className="flex items-center gap-3">
-          <label className="text-sm text-gray-600">Макс. балл:</label>
-          <input
-            type="number" min="1"
-            value={draft.maxScore}
-            onChange={(e) => setDraft({ ...draft, maxScore: Number(e.target.value) })}
-            className="w-24 px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Описание задания</label>
+          <textarea
+            rows="3"
+            placeholder="Что должен сделать студент..."
+            value={draft.description}
+            onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
           />
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ссылка на эталон</label>
+            <input
+              type="url"
+              placeholder="https://example.com/result.png"
+              value={draft.expectedResultUrl}
+              onChange={(e) => setDraft({ ...draft, expectedResultUrl: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Макс. балл</label>
+            <input
+              type="number" min="1"
+              value={draft.maxScore}
+              onChange={(e) => setDraft({ ...draft, maxScore: Number(e.target.value) })}
+              className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            />
+          </div>
+        </div>
+
+        <UrlPreview url={draft.expectedResultUrl} />
+
+        <div className="flex items-center justify-between pt-2">
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={draft.allowSelfCheck}
+              onChange={(e) => setDraft({ ...draft, allowSelfCheck: e.target.checked })}
+            />
+            Разрешить самопроверку студенту
+          </label>
           <button
             type="submit"
             disabled={saving}
-            className="ml-auto px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm"
+            className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm"
           >
             {saving ? 'Создание...' : '+ Добавить задание'}
           </button>
         </div>
       </form>
 
+      {/* СПИСОК ЗАДАНИЙ */}
       {tasks.length === 0 ? (
         <p className="text-center text-gray-500 py-4">Заданий пока нет.</p>
       ) : (
         tasks.map((task, idx) => (
-          <div key={task.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
-            <div className="flex justify-between items-start mb-3">
-              <span className="text-xs text-gray-400">Задание #{idx + 1}</span>
-              <button
-                onClick={() => handleDelete(task.id)}
-                className="text-xs text-red-600 hover:text-red-800"
-              >
-                Удалить
-              </button>
-            </div>
-            <textarea
-              rows="3"
-              value={task.description}
-              onChange={(e) => handleUpdate(task, { description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-3"
-            />
-            <div className="flex items-center gap-3">
-              <label className="text-sm text-gray-600">Макс. балл:</label>
-              <input
-                type="number" min="1"
-                value={task.maxScore}
-                onChange={(e) => handleUpdate(task, { maxScore: Number(e.target.value) })}
-                className="w-24 px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
-              />
-            </div>
-          </div>
+          <TaskCard
+            key={task.id}
+            task={task}
+            idx={idx}
+            onUpdate={handleUpdate}
+            onDelete={handleDelete}
+          />
         ))
       )}
     </div>
   );
 }
 
-/* ============== РЕДАКТОР КОНТЕНТА ============== */
+/* Карточка существующего задания — редактируемая */
+function TaskCard({ task, idx, onUpdate, onDelete }) {
+  const [local, setLocal] = useState({
+    description: task.description || '',
+    maxScore: task.maxScore ?? 10,
+    expectedResultUrl: task.expectedResultUrl || '',
+    allowSelfCheck: task.allowSelfCheck ?? true,
+  });
+
+  useEffect(() => {
+    setLocal({
+      description: task.description || '',
+      maxScore: task.maxScore ?? 10,
+      expectedResultUrl: task.expectedResultUrl || '',
+      allowSelfCheck: task.allowSelfCheck ?? true,
+    });
+  }, [task.id]);
+
+  const update = (patch) => {
+    const next = { ...local, ...patch };
+    setLocal(next);
+    onUpdate(task, patch);
+  };
+
+  return (
+    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 space-y-3">
+      <div className="flex justify-between items-center">
+        <span className="text-xs text-gray-400">Задание #{idx + 1}</span>
+        <button
+          onClick={() => onDelete(task.id)}
+          className="text-xs text-red-600 hover:text-red-800"
+        >
+          Удалить
+        </button>
+      </div>
+
+      <textarea
+        rows="3"
+        value={local.description}
+        onChange={(e) => update({ description: e.target.value })}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+      />
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Ссылка на эталон</label>
+          <input
+            type="url"
+            placeholder="https://..."
+            value={local.expectedResultUrl}
+            onChange={(e) => update({ expectedResultUrl: e.target.value })}
+            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Макс. балл</label>
+          <input
+            type="number" min="1"
+            value={local.maxScore}
+            onChange={(e) => update({ maxScore: Number(e.target.value) })}
+            className="w-24 px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+          />
+        </div>
+      </div>
+
+      <UrlPreview url={local.expectedResultUrl} />
+
+      <label className="flex items-center gap-2 text-sm text-gray-700">
+        <input
+          type="checkbox"
+          checked={local.allowSelfCheck}
+          onChange={(e) => update({ allowSelfCheck: e.target.checked })}
+        />
+        Разрешить самопроверку студенту
+      </label>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*                              РЕДАКТОР КОНТЕНТА                             */
+/* ═══════════════════════════════════════════════════════════════════════════ */
 function ContentEditor({ lesson, onSaved }) {
   const [form, setForm] = useState({
     title: lesson.title,

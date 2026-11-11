@@ -1,3 +1,6 @@
+import { useState, useEffect } from 'react';
+import { testsService } from '../../services/api';
+import { progress } from '../../utils/progress';
 export const TestViewer = ({ lessonId }) => {
   const [test, setTest] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -40,6 +43,8 @@ export const TestViewer = ({ lessonId }) => {
       correctCount,
       total: test.questions.length
     });
+
+    progress.saveTestResult(lessonId, test.courseId, score, passed);
   };
 
   if (loading) return <div className="p-4 text-gray-500">Загрузка теста...</div>;

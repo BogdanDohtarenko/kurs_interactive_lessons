@@ -7,12 +7,30 @@ const User = require('../models/User');
 const getCourses = async (req, res) => {
   try {
     const courses = await Course.findAll({
-      where: { isPublished: true },
-      include: [{ model: User, as: 'author', attributes: ['id', 'username'] }] // Подтягиваем имя автора
+      where: { isPublished: true },   // ← вот так
+      include: [{ model: User, as: 'author', attributes: ['id', 'username'] }],
     });
     res.json(courses);
   } catch (error) {
+    console.error('FULL ERROR:', error);
     res.status(500).json({ message: 'Ошибка при получении курсов', error: error.message });
+  }
+};
+
+const getCourseById = async (req, res) => {
+  try {
+    const course = await Course.findByPk(req.params.id, {
+      include: [{ model: User, as: 'author', attributes: ['id', 'username'] }],
+    });
+
+    if (!course) {
+      return res.status(404).json({ message: 'Курс не найден' });
+    }
+
+    res.json(course);
+  } catch (error) {
+    console.error('FULL ERROR:', error);
+    res.status(500).json({ message: 'Ошибка при получении курса', error: error.message });
   }
 };
 
@@ -87,6 +105,7 @@ const deleteCourse = async (req, res) => {
 module.exports = {
   getCourses,
   createCourse,
+  getCourseById, 
   updateCourse,
   deleteCourse
 };

@@ -14,11 +14,18 @@ const Task = sequelize.define('Task', {
   },
   maxScore: {
     type: DataTypes.INTEGER,
-    defaultValue: 10, // Максимальный балл за задание
-  }
-}, {
-  timestamps: true,
-});
+    allowNull: false,
+    defaultValue: 10,
+  },
+  expectedResultUrl: {           
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  allowSelfCheck: {             
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
+}, { timestamps: true });
 
 Lesson.hasMany(Task, { foreignKey: 'lessonId', as: 'tasks', onDelete: 'CASCADE' });
 Task.belongsTo(Lesson, { foreignKey: 'lessonId' });

@@ -1,12 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { lessonsService } from '../services/api';
+import { TestViewer } from '../components/lessons/TestViewer';
+import { TaskViewer } from '../components/lessons/TaskViewer';
+import { progress } from '../utils/progress';
 
 export const LessonPage = () => {
   const { id } = useParams();
   const [lesson, setLesson] = useState(null);
   const [activeTab, setActiveTab] = useState('content');
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+  if (lesson) {
+    progress.completeLesson(lesson.id, lesson.courseId, lesson.title);
+  }
+}, [lesson]);
 
   useEffect(() => {
     setLoading(true);

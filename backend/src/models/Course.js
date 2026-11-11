@@ -17,7 +17,7 @@ const Course = sequelize.define('Course', {
   },
   isPublished: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false,
+    defaultValue: true,
   }
 }, {
   timestamps: true,

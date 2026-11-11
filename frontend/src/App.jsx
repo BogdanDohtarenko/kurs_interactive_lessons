@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { coursesService, lessonsService, testsService, tasksService } from './services/api';
 import { LessonPage } from './pages/LessonPage';
 import LessonEditor from './pages/LessonEditor';
+import ProgressPage from './pages/ProgressPage';
+import RegisterForm from './components/auth/RegisterForm';
 
 const Icons = {
   Book: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>,
@@ -33,7 +35,14 @@ const Navbar = () => {
               >
               Админ-панель
             </Link>
+
             )}
+            <Link
+  to="/progress"
+  className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+>
+  Мой прогресс
+</Link>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600 hidden md:block">Привет, <b>{user?.username || user?.name}</b></span>
@@ -124,59 +133,11 @@ const LoginPage = () => {
   );
 };
 
-const RegisterPage = () => {
-  const [formData, setFormData] = useState({ username: '', email: '', password: '', role: 'student' });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
-  const navigate = useNavigate();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      await register(formData);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Ошибка регистрации');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <AuthLayout title="Создать аккаунт" subtitle="Присоединяйтесь к платформе">
-      <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-        {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">{error}</div>}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Имя пользователя</label>
-            <input type="text" required value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
-            <input type="email" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Пароль</label>
-            <input type="password" required value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors" />
-          </div>
-        </div>
-        <button type="submit" disabled={loading}
-          className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors disabled:opacity-50">
-          {loading ? 'Создание...' : 'Зарегистрироваться'}
-        </button>
-        <p className="text-center text-sm text-gray-600">
-          Уже есть аккаунт? <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">Войти</Link>
-        </p>
-      </form>
-    </AuthLayout>
-  );
-};
+const RegisterPage = () => (
+  <AuthLayout title="Создать аккаунт" subtitle="Присоединяйтесь к платформе">
+    <RegisterForm />
+  </AuthLayout>
+);
 
 const DashboardPage = () => {
   const [courses, setCourses] = useState([]);
@@ -417,6 +378,7 @@ export default function App() {
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/admin/course/:id" element={<AdminCoursePage />} />
             <Route path="/admin/lesson/:id" element={<LessonEditor />} />
+            <Route path="/progress" element={<ProgressPage />} />
           </Route>
           
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

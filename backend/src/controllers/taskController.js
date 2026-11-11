@@ -8,7 +8,10 @@ const Course = require('../models/Course');
 const getTasksByLesson = async (req, res) => {
   try {
     const { lessonId } = req.params;
-    const tasks = await Task.findAll({ where: { lessonId } });
+    const tasks = await Task.findAll({
+      where: { lessonId },
+      order: [['createdAt', 'ASC']],
+    });
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ message: 'Ошибка при получении заданий', error: error.message });
@@ -20,10 +23,16 @@ const getTasksByLesson = async (req, res) => {
 // @access  Private
 const createTask = async (req, res) => {
   try {
-    const { description, maxScore, lessonId } = req.body;
+    const {
+      description,
+      maxScore,
+      lessonId,
+      expectedResultUrl,
+      allowSelfCheck,
+    } = req.body;
 
     const lesson = await Lesson.findByPk(lessonId, {
-      include: [{ model: Course }]
+      include: [{ model: Course }],
     });
 
     if (!lesson) {
@@ -37,11 +46,14 @@ const createTask = async (req, res) => {
     const task = await Task.create({
       description,
       maxScore,
-      lessonId
+      lessonId,
+      expectedResultUrl: expectedResultUrl || null,
+      allowSelfCheck: allowSelfCheck ?? true,
     });
 
     res.status(201).json(task);
   } catch (error) {
+    console.error('FULL ERROR:', error);
     res.status(500).json({ message: 'Ошибка при создании задания', error: error.message });
   }
 };
@@ -52,13 +64,20 @@ const createTask = async (req, res) => {
 const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const { description, maxScore } = req.body;
+    const {
+      description,
+      maxScore,
+      expectedResultUrl,
+      allowSelfCheck,
+    } = req.body;
 
     const task = await Task.findByPk(id, {
-      include: [{
-        model: Lesson,
-        include: [{ model: Course }]
-      }]
+      include: [
+        {
+          model: Lesson,
+          include: [{ model: Course }],
+        },
+      ],
     });
 
     if (!task) {
@@ -69,9 +88,17 @@ const updateTask = async (req, res) => {
       return res.status(403).json({ message: 'Нет прав для изменения этого задания' });
     }
 
-    await task.update({ description, maxScore });
+    await task.update({
+      description: description ?? task.description,
+      maxScore: maxScore ?? task.maxScore,
+      expectedResultUrl:
+        expectedResultUrl === undefined ? task.expectedResultUrl : (expectedResultUrl || null),
+      allowSelfCheck: allowSelfCheck ?? task.allowSelfCheck,
+    });
+
     res.json(task);
   } catch (error) {
+    console.error('FULL ERROR:', error);
     res.status(500).json({ message: 'Ошибка при обновлении задания', error: error.message });
   }
 };
@@ -82,12 +109,14 @@ const updateTask = async (req, res) => {
 const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const task = await Task.findByPk(id, {
-      include: [{
-        model: Lesson,
-        include: [{ model: Course }]
-      }]
+      include: [
+        {
+          model: Lesson,
+          include: [{ model: Course }],
+        },
+      ],
     });
 
     if (!task) {
@@ -101,6 +130,7 @@ const deleteTask = async (req, res) => {
     await task.destroy();
     res.json({ message: 'Задание успешно удалено' });
   } catch (error) {
+    console.error('FULL ERROR:', error);
     res.status(500).json({ message: 'Ошибка при удалении задания', error: error.message });
   }
 };
@@ -109,5 +139,5 @@ module.exports = {
   getTasksByLesson,
   createTask,
   updateTask,
-  deleteTask
+  deleteTask,
 };

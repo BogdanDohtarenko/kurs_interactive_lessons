@@ -1,30 +1,21 @@
 const jwt = require('jsonwebtoken');
 
 const protect = async (req, res, next) => {
-  let token;
+  const authHeader = req.headers.authorization;
 
-  // Проверяем, есть ли заголовок Authorization и начинается ли он с 'Bearer'
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      // Извлекаем токен (формат "Bearer <token>")
-      token = req.headers.authorization.split(' ')[1];
-
-      // Верифицируем токен с помощью нашего секретного ключа
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // Добавляем расшифрованные данные (id и role) в объект запроса
-      req.user = decoded;
-
-      // Передаем управление следующему обработчику (контроллеру)
-      next();
-    } catch (error) {
-      console.error('Ошибка верификации токена:', error.message);
-      return res.status(401).json({ message: 'Не авторизован, неверный или истекший токен' });
-    }
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Не авторизован, токен отсутствует' });
   }
 
-  if (!token) {
-    return res.status(401).json({ message: 'Не авторизован, токен отсутствует' });
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    console.error('Ошибка верификации токена:', error.message);
+    return res.status(401).json({ message: 'Не авторизован, неверный или истекший токен' });
   }
 };
 

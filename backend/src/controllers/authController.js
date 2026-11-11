@@ -27,12 +27,14 @@ const registerUser = async (req, res) => {
 
     if (user) {
       const token = generateToken(user.id, user.role);
-      res.status(201).json({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        token: token,
+      res.json({
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+        },
       });
     } else {
       res.status(400).json({ message: 'Неверные данные пользователя' });
@@ -57,11 +59,13 @@ const loginUser = async (req, res) => {
     if (user && (await user.comparePassword(password))) {
       const token = generateToken(user.id, user.role);
       res.json({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        token: token,
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+        },
       });
     } else {
       res.status(401).json({ message: 'Неверный email или пароль' });
@@ -72,7 +76,12 @@ const loginUser = async (req, res) => {
   }
 };
 
+const getMe = async (req, res) => {
+  res.json({ user: req.user });
+};
+
 module.exports = {
   registerUser,
   loginUser,
+  getMe, 
 };
